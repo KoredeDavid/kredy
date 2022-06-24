@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+{% extends "base.html" %}
+{% load static %}
+
+
+
+{% block title %}Article Factory{% endblock %}
+
+{% block page_content %}
+    <a href="{% url 'drafts' %}"> Drafts</a>
+<br><br>
+
+    <div id="list">
+        {% for post in posts %}
+            <p>{{post.body|safe}} via {{request.user}}</p>
+        {% endfor %}
+    </div>
+
+
+    <form method="POST"  class="mt-5"  novalidate>
+        {% csrf_token %}
+        {{form.as_p}}
+        {% if request.user.is_boss or request.user.is_pro_author %}
+            <button type="submit" name="save">Save </button>
+        {% else %}
+            <button type="submit" name="send_for_approval">Send For Approval </button>
+        {% endif %}
+        <button type="submit" class="btn btn-primary" name="save_as_draft">Save as Draft</button>
+    </form>
+{% endblock %}
+
+{% block js %}
+    var articles = document.querySelector('#articles')
+    articles.style.background = 'gold'
+
+    var loc = window.location
+    var wsStart = 'ws://'
+    if (loc.protocol == 'https:'){
+        wsStart = 'wss://'
+    }
+    var endpoint = wsStart + loc.host + loc.pathname
+
+    var socket = new WebSocket(endpoint)
+
+    var body = $('#id_body')
+    var form = $('form')
+    var list = $('#list')
+
+    socket.onmessage = function(e){
+        console.log('message', e)
+        list.append('<p>' + e.data + '</p>')
+
+    }
+
+    socket.onopen = function(e){
+        console.log('open', e)
+        form.submit(function(event){
+            event.preventDefault()
+            var body_text = body.val()
+
+            // This pure js guy looks more like url_param with shitty stuffs like &, %20
+            // var form_serialized = form.serialize()
+
+            var form_serialized = {'body':body_text}
+            console.log(JSON.stringify(form_serialized))
+            socket.send(JSON.stringify(form_serialized))
+            form[0].reset()
+        })
+
+    }
+
+    socket.onerror = function(e){
+        console.log('error', e)
+    }
+
+    socket.onclose = function(e){
+        console.log('close', e)
+    }
+{% endblock %}

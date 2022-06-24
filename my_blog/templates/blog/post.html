@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block title %}Blog | {{category}}: {{post}}{% endblock %}
+
+{% block page_content %}
+
+    <h1>{{post}}</h1>
+
+    <div >
+        {{post.body|safe}}
+    </div>
+
+{% endblock %}

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block title %}Blog{% endblock %}
+
+{% block page_content %}
+
+    <h1>Welcome to Blog</h1>
+
+    {% for category in category %}
+        <div class="category-item mb-2">
+            <a href="{% url 'category' category.slug  %}">{{category}}</a><br/>
+            <small>{{category.about}}</small>
+        </div>
+    {% empty %}
+        There are no stories yet
+    {% endfor %}
+
+{% endblock %}
+
+{% block js %}
+    var articles = document.querySelector('#blog')
+    articles.style.background = 'gold'
+
+{% endblock %}

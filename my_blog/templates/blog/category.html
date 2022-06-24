@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block title %}Blog | {{category}}{% endblock %}
+
+{% block page_content %}
+
+    <h1>{{category}}</h1>
+
+    {% for post in posts %}
+        <a href="{% url 'post' post.slug  %}">{{post}}</a>
+
+    {% empty %}
+        There are no posts in {{category}} yet
+    {% endfor %}
+
+{% endblock %}
