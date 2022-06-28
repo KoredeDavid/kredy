@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    # Django Apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -38,10 +39,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'blog',
+    # Project Apps
+    'apps.blog',
+    'apps.account',
 
+    # Third Party Apps
     'ckeditor',
-
     'channels'
 ]
 
@@ -61,7 +64,7 @@ ASGI_APPLICATION = "my_blog.routing.application"
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ["my_blog/templates/"],
+        'DIRS': [os.path.join(BASE_DIR, 'my_blog/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -137,11 +140,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-AUTH_USER_MODEL = 'blog.CustomUser'
+AUTH_USER_MODEL = 'account.CustomUser'
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    'blog.backends.CustomAuthentication',
+    'apps.account.backends.CustomAuthentication',
 )
 
 LOGIN_URL = 'sign_in'
