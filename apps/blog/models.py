@@ -22,42 +22,35 @@ def clean_slug(value):
     return ''.join(clean_value)
 
 
-class Model(models.Model):
-    """
-    I will think about it later
-    """
-    clean_method_is_called = False
-
-    def clean(self):
-        self.clean_method_is_called = True
-
-    def save(self, *args, **kwargs):
-        if not self.clean_method_is_called:
-            self.full_clean()
-
-
 # Models
 
-class Author(Model):
+class Author(models.Model):
+    clean_method_is_called = False
+
     user = models.OneToOneField(UserModel, on_delete=models.SET_NULL, null=True)
-    is_author = models.BooleanField(default=False)
     is_pro_author = models.BooleanField(default=False)
     is_boss = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
-        if self.is_pro_author and not self.is_author:
-            raise ValidationError({"is_pro_author": 'The user cannot be a professional author if he/she is not an '
-                                                    'author'})
+        self.clean_method_is_called = True
 
         if self.is_boss:
-            self.is_author = True
             self.is_pro_author = True
 
-        super().clean()
+    def save(self, *args, **kwargs):
+        if not self.clean_method_is_called:
+            self.full_clean()
+
+            super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.user.email
 
 
-class Category(Model):
+class Category(models.Model):
+    clean_method_is_called = False
+
     title = models.CharField(max_length=50, unique=True)
     about = models.CharField(max_length=150)
     slug = models.SlugField(blank=True, editable=False)
@@ -67,10 +60,14 @@ class Category(Model):
         verbose_name_plural = 'Categories'
 
     def clean(self):
+        self.clean_method_is_called = True
+
         case_insensitive_unique_validator(self, self.title)
-        super().clean()
 
     def save(self, *args, **kwargs):
+        if not self.clean_method_is_called:
+            self.full_clean()
+            
         if self.title is not None:
             self.slug = slugify(clean_slug(self.title.lower()))
 
@@ -80,13 +77,16 @@ class Category(Model):
         return self.title
 
 
-class Post(Model):
+class Post(models.Model):
+    clean_method_is_called = False
+
     post_category = models.ForeignKey('Category', related_name='post_category', on_delete=models.SET_NULL, null=True)
     title = models.CharField(unique=True, max_length=100)
     post_author = models.ForeignKey('Author', on_delete=models.SET_NULL, related_name='post_author', null=True)
     body = RichTextField()
     approved = models.BooleanField(default=False, )
-    approved_by = models.ForeignKey('Author', on_delete=models.CASCADE, related_name='post_approved_by', blank=True, null=True)
+    approved_by = models.ForeignKey('Author', on_delete=models.CASCADE, related_name='post_approved_by', blank=True,
+                                    null=True)
     published = models.BooleanField(default=False, )
     draft = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
@@ -105,6 +105,8 @@ class Post(Model):
         self.save()
 
     def clean(self):
+        self.clean_method_is_called = True
+
         if self.post_author:
             if self.post_author.is_pro_author:
                 self.approved = True
@@ -119,9 +121,10 @@ class Post(Model):
 
         case_insensitive_unique_validator(self, self.title)
 
-        super().clean()
-
     def save(self, *args, **kwargs):
+        if not self.clean_method_is_called:
+            self.full_clean()
+            
         if self.title is not None:
             self.slug = slugify(clean_slug(self.title.lower()))
 
@@ -131,12 +134,12 @@ class Post(Model):
         return self.title
 
 
-class Edit(Model):
+class Edit(models.Model):
     edit_post = models.ForeignKey('Post', related_name='post_edit', on_delete=models.SET_NULL, null=True)
     body = models.TextField()
 
 
-class Comment(Model):
+class Comment(models.Model):
     comment_author = models.ForeignKey(UserModel, on_delete=models.SET_NULL, related_name='user_comment', null=True)
     body = RichTextField(max_length=200)
     created_on = models.DateTimeField(auto_now_add=True)

@@ -42,6 +42,9 @@ INSTALLED_APPS = [
     # Project Apps
     'apps.blog',
     'apps.account',
+    'apps.jwt_authentication',
+    'apps.social_authentication',
+    'apps.threaded_comments',
 
     # Third Party Apps
     'ckeditor',
@@ -89,17 +92,6 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
-# DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#             'NAME': 'my_blog',
-#             'USER': 'postgres',
-#             'PASSWORD': 'Davdam@50.',
-#             'HOST': '127.0.0.1',
-#             'PORT': '5432',
-#         }
-#     }
 
 
 # Password validation
