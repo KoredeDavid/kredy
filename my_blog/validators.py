@@ -6,7 +6,9 @@ def case_insensitive_unique_validator(instance, field):
     Django's unique field validator, meaning it sees 'Korede' and 'korede' as two diff values
     This simple validator helps solve that problem
     """
-    # assert isinstance(instance, type), "The Instance value should be of class object"
+    same_object = instance is field
+
+    assert same_object, "The Instance and field value should be of same class object"
 
     field_query = {f'{field}__iexact': field}
 
