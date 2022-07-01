@@ -1,3 +1,4 @@
 from django.contrib import admin
+from apps.jwt_authentication.models import AuthenticationToken
 
-# Register your models here.
+admin.site.register(AuthenticationToken)

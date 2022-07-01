@@ -1,16 +1,14 @@
 from django.core.exceptions import ValidationError
 
 
-def case_insensitive_unique_validator(instance, field):
+def case_insensitive_unique_validator(instance, field, value):
     """
     Django's unique field validator, meaning it sees 'Korede' and 'korede' as two diff values
     This simple validator helps solve that problem
     """
-    same_object = instance is field
+    instance = instance.__class__
 
-    assert same_object, "The Instance and field value should be of same class object"
-
-    field_query = {f'{field}__iexact': field}
+    field_query = {f'{field}__iexact': value}
 
     try:
         query_value = instance.objects.get(**field_query)

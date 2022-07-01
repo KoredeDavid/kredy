@@ -1,7 +1,10 @@
+import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from apps.account.validators import username_regex_validator, username_min_length
+from apps.jwt_authentication import tokens
 from my_blog.validators import case_insensitive_unique_validator
 
 
@@ -11,6 +14,7 @@ from my_blog.validators import case_insensitive_unique_validator
 class CustomUser(AbstractUser):
     clean_method_is_called = False
 
+    uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
     username = models.CharField(
         'username',
         max_length=30,
@@ -23,13 +27,19 @@ class CustomUser(AbstractUser):
     )
     email = models.EmailField('email address', blank=False, null=True, unique=True)
 
+    def generate_tokens(self):
+        return tokens.generate_tokens(self.id)
+
+    def get_tokens(self):
+        return tokens.get_tokens(self.id)
+
     def clean(self):
         self.clean_method_is_called = True
 
         if self.email is not None:
             self.email = self.email.lower()
 
-        case_insensitive_unique_validator(self, self.username)
+        case_insensitive_unique_validator(self, "username", self.username)
 
     def save(self, *args, **kwargs):
         if not self.clean_method_is_called:

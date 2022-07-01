@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -27,6 +29,7 @@ def clean_slug(value):
 class Author(models.Model):
     clean_method_is_called = False
 
+    uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
     user = models.OneToOneField(UserModel, on_delete=models.SET_NULL, null=True)
     is_pro_author = models.BooleanField(default=False)
     is_boss = models.BooleanField(default=False)
@@ -51,6 +54,7 @@ class Author(models.Model):
 class Category(models.Model):
     clean_method_is_called = False
 
+    uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
     title = models.CharField(max_length=50, unique=True)
     about = models.CharField(max_length=150)
     slug = models.SlugField(blank=True, editable=False)
@@ -62,12 +66,12 @@ class Category(models.Model):
     def clean(self):
         self.clean_method_is_called = True
 
-        case_insensitive_unique_validator(self, self.title)
+        case_insensitive_unique_validator(self, 'title', self.title)
 
     def save(self, *args, **kwargs):
         if not self.clean_method_is_called:
             self.full_clean()
-            
+
         if self.title is not None:
             self.slug = slugify(clean_slug(self.title.lower()))
 
@@ -80,6 +84,7 @@ class Category(models.Model):
 class Post(models.Model):
     clean_method_is_called = False
 
+    uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
     post_category = models.ForeignKey('Category', related_name='post_category', on_delete=models.SET_NULL, null=True)
     title = models.CharField(unique=True, max_length=100)
     post_author = models.ForeignKey('Author', on_delete=models.SET_NULL, related_name='post_author', null=True)
@@ -119,12 +124,12 @@ class Post(models.Model):
             raise ValidationError(
                 {'published': "This post is yet to be approved by the boss, so it can't be published"})
 
-        case_insensitive_unique_validator(self, self.title)
+        case_insensitive_unique_validator(self, 'title', self.title)
 
     def save(self, *args, **kwargs):
         if not self.clean_method_is_called:
             self.full_clean()
-            
+
         if self.title is not None:
             self.slug = slugify(clean_slug(self.title.lower()))
 
@@ -135,11 +140,13 @@ class Post(models.Model):
 
 
 class Edit(models.Model):
+    uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
     edit_post = models.ForeignKey('Post', related_name='post_edit', on_delete=models.SET_NULL, null=True)
     body = models.TextField()
 
 
 class Comment(models.Model):
+    uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
     comment_author = models.ForeignKey(UserModel, on_delete=models.SET_NULL, related_name='user_comment', null=True)
     body = RichTextField(max_length=200)
     created_on = models.DateTimeField(auto_now_add=True)

@@ -40,10 +40,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Project Apps
-    'apps.blog',
     'apps.account',
     'apps.jwt_authentication',
     'apps.social_authentication',
+    'apps.blog',
     'apps.threaded_comments',
 
     # Third Party Apps
@@ -140,3 +140,5 @@ AUTHENTICATION_BACKENDS = (
 )
 
 LOGIN_URL = 'sign_in'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
