@@ -3,7 +3,6 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 
-from apps.jwt_authentication.models import AuthenticationToken
 from apps.jwt_authentication.serializers import AuthTokenSerializer
 
 UserModel = get_user_model()
@@ -44,6 +43,9 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
     username = serializers.CharField(max_length=30)
+    email = serializers.EmailField(read_only=True)
+    uuid = serializers.UUIDField(read_only=True)
+    tokens = AuthTokenSerializer(read_only=True)
 
     def validate(self, attrs):
         username = attrs.get("username")
@@ -62,6 +64,7 @@ class LoginSerializer(serializers.Serializer):
             'username': user.username,
             'email': user.email,
             'uuid': user.uuid,
-            'token': user.get_tokens()
+            'tokens': user.get_tokens()
         }
+
         return data

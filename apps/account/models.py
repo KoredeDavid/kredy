@@ -28,10 +28,10 @@ class CustomUser(AbstractUser):
     email = models.EmailField('email address', blank=False, null=True, unique=True)
 
     def generate_tokens(self):
-        return tokens.generate_tokens(self.id)
+        return tokens.generate_tokens(self)
 
     def get_tokens(self):
-        return tokens.get_tokens(self.id)
+        return tokens.get_tokens(self)
 
     def clean(self):
         self.clean_method_is_called = True
@@ -39,7 +39,11 @@ class CustomUser(AbstractUser):
         if self.email is not None:
             self.email = self.email.lower()
 
-        case_insensitive_unique_validator(self, "username", self.username)
+        id_ = None
+        if self.id:
+            id_ = self.id
+
+        case_insensitive_unique_validator(self, "username", self.username, id_)
 
     def save(self, *args, **kwargs):
         if not self.clean_method_is_called:

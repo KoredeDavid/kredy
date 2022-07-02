@@ -66,7 +66,11 @@ class Category(models.Model):
     def clean(self):
         self.clean_method_is_called = True
 
-        case_insensitive_unique_validator(self, 'title', self.title)
+        id_ = None
+        if self.id:
+            id_ = self.id
+
+        case_insensitive_unique_validator(self, 'title', self.title, id_)
 
     def save(self, *args, **kwargs):
         if not self.clean_method_is_called:
@@ -124,7 +128,11 @@ class Post(models.Model):
             raise ValidationError(
                 {'published': "This post is yet to be approved by the boss, so it can't be published"})
 
-        case_insensitive_unique_validator(self, 'title', self.title)
+        id_ = None
+        if self.id:
+            id_ = self.id
+
+        case_insensitive_unique_validator(self, 'title', self.title, id_)
 
     def save(self, *args, **kwargs):
         if not self.clean_method_is_called:

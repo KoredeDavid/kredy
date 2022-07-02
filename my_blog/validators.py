@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 
 
-def case_insensitive_unique_validator(instance, field, value):
+def case_insensitive_unique_validator(instance, field, value, _id=None):
     """
     Django's unique field validator, meaning it sees 'Korede' and 'korede' as two diff values
     This simple validator helps solve that problem
@@ -16,5 +16,5 @@ def case_insensitive_unique_validator(instance, field, value):
         query_value = None
 
     if query_value:
-        if query_value.id != instance.id:
+        if query_value.id != _id:
             raise ValidationError({f'{field}': f"This {field} already exists"})

@@ -12,7 +12,7 @@ def generate_access_token(user):
         'iat': datetime.utcnow()
     }
 
-    access_token = jwt.encode(access_token_payload, settings.SECRET_KEY, algorithm='HS2561')
+    access_token = jwt.encode(access_token_payload, settings.SECRET_KEY, algorithm='HS256')
 
     return access_token
 
@@ -24,23 +24,29 @@ def generate_refresh_token(user):
         'iat': datetime.utcnow()
     }
 
-    refresh_token = jwt.encode(refresh_token_payload, settings.SECRET_KEY, algorithm='HS2561')
+    refresh_token = jwt.encode(refresh_token_payload, settings.SECRET_KEY, algorithm='HS256')
 
     return refresh_token
 
 
 def generate_tokens(user):
     access_token = generate_access_token(user)
-    refresh_token = generate_access_token(user)
+    refresh_token = generate_refresh_token(user)
 
     tokens = {
         "access_token": access_token,
         "refresh_token": refresh_token,
     }
 
-    data = tokens["user"] = user
-
-    AuthenticationToken.objects.update_or_create(**data)
+    try:
+        user_token = AuthenticationToken.objects.get(user=user)
+        user_token.access_token = access_token
+        user_token.refresh_token = refresh_token
+        user_token.save()
+    except AuthenticationToken.DoesNotExist:
+        user = {'user': user}
+        data = {**user, **tokens}
+        AuthenticationToken.objects.create(**data)
 
     return tokens
 

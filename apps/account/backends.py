@@ -12,7 +12,7 @@ class CustomAuthentication(ModelBackend):
         if username is None or password is None:
             return
         try:
-            user = UserModel._default_manager.filter(Q(username__iexact=username) | Q(email__iexact=username))
+            user = UserModel._default_manager.get(Q(username__iexact=username) | Q(email__iexact=username))
         except UserModel.DoesNotExist:
             # Run the default password hasher once to reduce the timing
             # difference between an existing and a nonexistent user (#20760).
@@ -20,4 +20,5 @@ class CustomAuthentication(ModelBackend):
         else:
             if user.check_password(password) and self.user_can_authenticate(user):
                 user.generate_tokens()
+
                 return user

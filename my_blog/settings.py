@@ -135,9 +135,10 @@ STATIC_URL = '/static/'
 AUTH_USER_MODEL = 'account.CustomUser'
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
     'apps.account.backends.CustomAuthentication',
+    # 'django.contrib.auth.backends.ModelBackend',
 )
+
 
 LOGIN_URL = 'sign_in'
 
