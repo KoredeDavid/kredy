@@ -5,10 +5,10 @@ from django.conf import settings
 from apps.jwt_authentication.models import AuthenticationToken
 
 
-def generate_access_token(user):
+def generate_access_token(user, days=0, minutes=5):
     access_token_payload = {
         'user_id': user.id,
-        'exp': datetime.utcnow() + timedelta(days=0, minutes=5),
+        'exp': datetime.utcnow() + timedelta(days=days, minutes=minutes),
         'iat': datetime.utcnow()
     }
 
@@ -17,10 +17,10 @@ def generate_access_token(user):
     return access_token
 
 
-def generate_refresh_token(user):
+def generate_refresh_token(user, days=60, minutes=0):
     refresh_token_payload = {
         'user_id': user.id,
-        'exp': datetime.utcnow() + timedelta(days=60),
+        'exp': datetime.utcnow() + timedelta(days=days, minutes=minutes),
         'iat': datetime.utcnow()
     }
 

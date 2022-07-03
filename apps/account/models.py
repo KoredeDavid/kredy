@@ -26,6 +26,7 @@ class CustomUser(AbstractUser):
         },
     )
     email = models.EmailField('email address', blank=False, null=True, unique=True)
+    is_verified = models.BooleanField(default=False)
 
     def generate_tokens(self):
         return tokens.generate_tokens(self)

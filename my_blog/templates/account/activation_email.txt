@@ -1,0 +1,5 @@
+Hello {{user.username}}!
+
+To confirm your registration, visit the following link: {{activate_account_url}}
+
+Welcome to K!!

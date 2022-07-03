@@ -1,14 +1,21 @@
+import jwt
+from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+from django.urls import reverse
 from rest_framework import serializers
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 
+from apps.jwt_authentication import tokens
 from apps.jwt_authentication.serializers import AuthTokenSerializer
 
 UserModel = get_user_model()
 
 
-class UserSerializer(serializers.ModelSerializer):
+class RegisterSerializer(serializers.ModelSerializer):
     password1 = serializers.CharField(validators=[validate_password], write_only=True)
     password2 = serializers.CharField(write_only=True)
 
@@ -29,7 +36,7 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"password2": "Passwords don't match"})
         return attrs
 
-    def save(self):
+    def save(self, request):
         user = UserModel(
             username=self.validated_data['username'],
             email=self.validated_data['email'],
@@ -37,15 +44,82 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(self.validated_data['password1'])
         user.save()
 
+        token = tokens.generate_access_token(user, days=3)
+        protocol = request.scheme,
+        domain = get_current_site(request).domain
+        relative_link = reverse('verify-email')
+
+        context = {
+            #   protocol://domain/relative_link.com?token=<token>
+            'activate_account_url': f"{protocol}{domain}{relative_link}?token={token}",
+            'user': user,
+        }
+
+        email_subject = "K: Verification link!!!"
+        email_body = render_to_string('account/activation_email.txt', context)
+        email = EmailMessage(subject=email_subject, body=email_body, to=[user.email])
+        email.send()
+
         return user
 
 
-class LoginSerializer(serializers.Serializer):
-    password = serializers.CharField(write_only=True)
-    username = serializers.CharField(max_length=30)
-    email = serializers.EmailField(read_only=True)
-    uuid = serializers.UUIDField(read_only=True)
+class EmailVerificationSerializer(serializers.ModelSerializer):
     tokens = AuthTokenSerializer(read_only=True)
+
+    fields = ('username', 'email', 'uuid', 'tokens')
+    extra_kwargs = {
+        'uuid': {
+            'read_only': True
+        },
+        'email': {
+            'read_only': True
+        },
+        'username': {
+            'read_only': True
+        },
+    }
+
+    def save(self, request):
+        token = request.GET.get('token')
+
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY)
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed({'token': 'Activation link has expired!!!'})
+        except jwt.exceptions.DecodeError:
+            raise AuthenticationFailed({'token': 'Activation link is invalid!!!'})
+
+        user = UserModel.objects.get(id=payload['user_id'])
+        if not user.is_verified:
+            user.is_verified = True
+            user.save()
+
+            data = {
+                'username': user.username,
+                'email': user.email,
+                'uuid': user.uuid,
+                'tokens': user.get_tokens()
+            }
+
+            return data
+
+
+class LoginSerializer(serializers.ModelSerializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+    tokens = AuthTokenSerializer(read_only=True)
+
+    class Meta:
+        model = UserModel
+        fields = ('username', 'password', 'email', 'uuid', 'tokens')
+        extra_kwargs = {
+            'uuid': {
+                'read_only': True
+            },
+            'email': {
+                'read_only': True
+            }
+        }
 
     def validate(self, attrs):
         username = attrs.get("username")

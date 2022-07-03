@@ -19,14 +19,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'lmvn^7z=z93fo2boh1q9192j2i&7(xgpy)^_zsmry(0wy7a$pv'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -61,13 +53,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
 ROOT_URLCONF = 'my_blog.urls'
-ASGI_APPLICATION = "my_blog.routing.application"
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'my_blog/templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -81,17 +73,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'my_blog.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-#
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
+ASGI_APPLICATION = "my_blog.routing.application"
 
 
 # Password validation
@@ -132,14 +114,38 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# This tells django where to find our static files in the root directory
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Custom user model
 AUTH_USER_MODEL = 'account.CustomUser'
+
+LOGIN_URL = 'sign_in'
 
 AUTHENTICATION_BACKENDS = (
     'apps.account.backends.CustomAuthentication',
     'django.contrib.auth.backends.ModelBackend',
 )
 
-
-LOGIN_URL = 'sign_in'
-
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+# I have forgotten the reason I use this guy, but I will just leave it here.
+SITE_ID = 1
+
+
+#  Django Rest Framework settings
+# REST_FRAMEWORK = {
+#
+#     # Token Authentication
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'rest_framework.authentication.TokenAuthentication',  # <-- And here
+#     ],
+#
+#     # API response Pagination
+#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+#     'PAGE_SIZE': 5
+# }
