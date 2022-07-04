@@ -25,7 +25,7 @@ class CustomUser(AbstractUser):
             'unique': "A user with that username already exists.",
         },
     )
-    email = models.EmailField('email address', blank=False, null=True, unique=True)
+    email = models.EmailField('email address', unique=True)
     is_verified = models.BooleanField(default=False)
 
     def generate_tokens(self):

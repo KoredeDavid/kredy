@@ -8,7 +8,9 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from rest_framework.validators import UniqueValidator
 
+from apps.account.validators import username_regex_validator
 from apps.jwt_authentication import tokens
 from apps.jwt_authentication.serializers import AuthTokenSerializer
 
@@ -20,12 +22,28 @@ class RegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True)
 
     class Meta:
+        validator_queryset = UserModel.objects.all().values_list('email', 'username')
+        email_validator_message = "A user with that email already exists"
+        username_validator_message = "A user with that username already exists"
+
         model = UserModel
-        fields = ('username', 'email', 'uuid', 'password1', 'password2')
+        fields = ('username', 'email', 'password1', 'password2')
 
         extra_kwargs = {
             'uuid': {
                 'read_only': True
+            },
+            'username': {
+                'validators': [
+                    UniqueValidator(queryset=validator_queryset,
+                                    message=username_validator_message, lookup='iexact'),
+                ]
+            },
+            'email': {
+                'validators': [
+                    UniqueValidator(queryset=validator_queryset,
+                                    message=email_validator_message, lookup='iexact'),
+                ]
             }
         }
 
@@ -34,24 +52,25 @@ class RegisterSerializer(serializers.ModelSerializer):
         password2 = attrs.get("password2")
         if password1 and password2 and password1 != password2:
             raise serializers.ValidationError({"password2": "Passwords don't match"})
+
         return attrs
 
-    def save(self, request):
+    def save(self, request, **kwargs):
         user = UserModel(
             username=self.validated_data['username'],
-            email=self.validated_data['email'],
+            email=self.validated_data['email'].lower(),
         )
         user.set_password(self.validated_data['password1'])
+        user.clean_method_is_called = True
         user.save()
 
         token = tokens.generate_access_token(user, days=3)
         protocol = request.scheme,
         domain = get_current_site(request).domain
         relative_link = reverse('verify-email')
-
         context = {
             #   protocol://domain/relative_link.com?token=<token>
-            'activate_account_url': f"{protocol}{domain}{relative_link}?token={token}",
+            'activate_account_url': f"{protocol[0]}://{domain}{relative_link}?token={token}",
             'user': user,
         }
 
@@ -60,24 +79,32 @@ class RegisterSerializer(serializers.ModelSerializer):
         email = EmailMessage(subject=email_subject, body=email_body, to=[user.email])
         email.send()
 
-        return user
+        data = {
+            **self.validated_data,
+            'tokens': user.generate_tokens(),
+            'uuid': user.uuid
+        }
+
+        return data
 
 
 class EmailVerificationSerializer(serializers.ModelSerializer):
     tokens = AuthTokenSerializer(read_only=True)
 
-    fields = ('username', 'email', 'uuid', 'tokens')
-    extra_kwargs = {
-        'uuid': {
-            'read_only': True
-        },
-        'email': {
-            'read_only': True
-        },
-        'username': {
-            'read_only': True
-        },
-    }
+    class Meta:
+        model = UserModel
+        fields = ('username', 'email', 'uuid', 'tokens')
+        extra_kwargs = {
+            'uuid': {
+                'read_only': True
+            },
+            'email': {
+                'read_only': True
+            },
+            'username': {
+                'read_only': True
+            },
+        }
 
     def save(self, request):
         token = request.GET.get('token')
