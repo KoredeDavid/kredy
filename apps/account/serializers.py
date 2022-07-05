@@ -1,5 +1,3 @@
-import jwt
-from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.sites.shortcuts import get_current_site
@@ -7,10 +5,9 @@ from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.urls import reverse
 from rest_framework import serializers
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.validators import UniqueValidator
 
-from apps.account.validators import username_regex_validator
 from apps.jwt_authentication import tokens
 from apps.jwt_authentication.serializers import AuthTokenSerializer
 
@@ -79,56 +76,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         email = EmailMessage(subject=email_subject, body=email_body, to=[user.email])
         email.send()
 
+        self.validated_data.pop('password1')
+        self.validated_data.pop('password2')
+
         data = {
             **self.validated_data,
-            'tokens': user.generate_tokens(),
-            'uuid': user.uuid
+            'uuid': user.uuid,
+            'is_verified': user.is_verified,
+            'tokens': user.generate_tokens()
         }
 
         return data
-
-
-class EmailVerificationSerializer(serializers.ModelSerializer):
-    tokens = AuthTokenSerializer(read_only=True)
-
-    class Meta:
-        model = UserModel
-        fields = ('username', 'email', 'uuid', 'tokens')
-        extra_kwargs = {
-            'uuid': {
-                'read_only': True
-            },
-            'email': {
-                'read_only': True
-            },
-            'username': {
-                'read_only': True
-            },
-        }
-
-    def save(self, request):
-        token = request.GET.get('token')
-
-        try:
-            payload = jwt.decode(token, settings.SECRET_KEY)
-        except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed({'token': 'Activation link has expired!!!'})
-        except jwt.exceptions.DecodeError:
-            raise AuthenticationFailed({'token': 'Activation link is invalid!!!'})
-
-        user = UserModel.objects.get(id=payload['user_id'])
-        if not user.is_verified:
-            user.is_verified = True
-            user.save()
-
-            data = {
-                'username': user.username,
-                'email': user.email,
-                'uuid': user.uuid,
-                'tokens': user.get_tokens()
-            }
-
-            return data
 
 
 class LoginSerializer(serializers.ModelSerializer):
@@ -138,12 +96,15 @@ class LoginSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserModel
-        fields = ('username', 'password', 'email', 'uuid', 'tokens')
+        fields = ('username', 'password', 'email', 'is_verified',  'uuid', 'tokens')
         extra_kwargs = {
             'uuid': {
                 'read_only': True
             },
             'email': {
+                'read_only': True
+            },
+            'is_verified': {
                 'read_only': True
             }
         }
@@ -165,6 +126,7 @@ class LoginSerializer(serializers.ModelSerializer):
             'username': user.username,
             'email': user.email,
             'uuid': user.uuid,
+            'is_verified': user.is_verified,
             'tokens': user.get_tokens()
         }
 
