@@ -2,8 +2,6 @@ from datetime import datetime, timedelta
 import jwt
 from django.conf import settings
 
-from apps.jwt_authentication.models import AuthenticationToken
-
 
 def generate_access_token(user, days=0, minutes=5):
     access_token_payload = {
@@ -38,25 +36,6 @@ def generate_tokens(user):
         "refresh_token": refresh_token,
     }
 
-    try:
-        user_token = AuthenticationToken.objects.get(user=user)
-        user_token.access_token = access_token
-        user_token.refresh_token = refresh_token
-        user_token.save()
-    except AuthenticationToken.DoesNotExist:
-        user = {'user': user}
-        data = {**user, **tokens}
-        AuthenticationToken.objects.create(**data)
-
     return tokens
 
 
-def get_tokens(user):
-    user_token = AuthenticationToken.objects.get(user=user)
-
-    tokens = {
-        "access_token": user_token.access_token,
-        "refresh_token": user_token.refresh_token,
-    }
-
-    return tokens

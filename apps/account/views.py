@@ -1,6 +1,8 @@
 import jwt
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
@@ -15,22 +17,28 @@ class RegisterAPIView(generics.GenericAPIView):
 
     # renderer_classes = (UserRenderer,)
 
+    @method_decorator(ensure_csrf_cookie)
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user_data = serializer.save(request=request)
+        data = serializer.save(request=request)
 
-        return Response(user_data, status=status.HTTP_201_CREATED)
+        response = Response(data, status=status.HTTP_201_CREATED)
+        response.set_cookie(key='refresh_token', value=data['tokens']['refresh_token'], httponly=True)
+        return response
 
 
 class LoginAPIView(generics.GenericAPIView):
     serializer_class = LoginSerializer
 
+    @method_decorator(ensure_csrf_cookie)
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        response = Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        response.set_cookie(key='refresh_token', value=serializer.data['tokens']['refresh_token'], httponly=True)
+        return response
 
 
 class VerifyEmailAPIView(generics.GenericAPIView):

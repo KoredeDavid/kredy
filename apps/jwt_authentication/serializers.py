@@ -1,10 +1,7 @@
 from rest_framework import serializers
 
-from apps.jwt_authentication.models import AuthenticationToken
 
-
-class AuthTokenSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AuthenticationToken
-        exclude = ('user',)
+class AuthTokenSerializer(serializers.Serializer):
+    access_token = serializers.CharField()
+    refresh_token = serializers.CharField()
 

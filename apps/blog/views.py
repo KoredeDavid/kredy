@@ -4,10 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from .forms import CustomUserCreationForm, PostForm
 from .models import Post, Category, Comment
-
 
 
 @login_required
@@ -46,3 +48,8 @@ def articles_factory(request, username):
         raise PermissionDenied
 
 
+class HomeAPIView(generics.GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        return Response({"message": "hi"})

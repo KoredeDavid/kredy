@@ -107,7 +107,7 @@ pip-selfcheck.json
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
-# User-specific stuff
+# UserModel-specific stuff
 .idea/
 .idea/**/workspace.xml
 .idea/**/tasks.xml
@@ -115,7 +115,7 @@ pip-selfcheck.json
 .idea/**/dictionaries
 .idea/**/shelf
 
-# AWS User-specific
+# AWS UserModel-specific
 .idea/**/aws.xml
 
 # Generated files

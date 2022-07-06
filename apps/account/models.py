@@ -31,9 +31,6 @@ class CustomUser(AbstractUser):
     def generate_tokens(self):
         return tokens.generate_tokens(self)
 
-    def get_tokens(self):
-        return tokens.get_tokens(self)
-
     def clean(self):
         self.clean_method_is_called = True
 

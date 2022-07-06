@@ -127,7 +127,7 @@ class LoginSerializer(serializers.ModelSerializer):
             'email': user.email,
             'uuid': user.uuid,
             'is_verified': user.is_verified,
-            'tokens': user.get_tokens()
+            'tokens': user.generate_tokens()
         }
 
         return data

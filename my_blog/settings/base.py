@@ -138,14 +138,8 @@ SITE_ID = 1
 
 
 #  Django Rest Framework settings
-# REST_FRAMEWORK = {
-#
-#     # Token Authentication
-#     'DEFAULT_AUTHENTICATION_CLASSES': [
-#         'rest_framework.authentication.TokenAuthentication',  # <-- And here
-#     ],
-#
-#     # API response Pagination
-#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-#     'PAGE_SIZE': 5
-# }
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'apps.jwt_authentication.backends.JWTAuthentication',
+    ),
+}

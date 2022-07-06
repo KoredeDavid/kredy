@@ -20,7 +20,11 @@ from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
     path('account/', include('apps.account.urls')),
+
+    path('jwt-auth/', include('apps.jwt_authentication.urls')),
+
     path('', include('apps.blog.urls')),
 
 ]
