@@ -59,7 +59,6 @@ class VerifyEmailAPIView(generics.GenericAPIView):
             'email': user.email,
             'is_verified': True,
             'uuid': user.uuid,
-            'tokens': user.get_tokens()
         }
 
         if not user.is_verified:

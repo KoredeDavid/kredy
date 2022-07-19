@@ -1,27 +1,19 @@
+import re
 import uuid
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 from django.utils.text import slugify
 
 from ckeditor.fields import RichTextField
+from my_blog.models_manger import MyModelManager
 
-from my_blog.validators import case_insensitive_unique_validator
 
 UserModel = get_user_model()
 
-
-def clean_slug(value):
-    """
-    It cleans the slug value so that it contains only alphanum characters
-    """
-    clean_value = list(value)
-    for i in clean_value:
-        if not (i.isdigit() or i.isalpha() or i == ' '):
-            clean_value.remove(i)
-    return ''.join(clean_value)
+# Regex pattern for cleaning blog title and category
+pattern = re.compile(r'[^ A-Za-z0-9 ]+')
 
 
 # Models
@@ -52,7 +44,8 @@ class Author(models.Model):
 
 
 class Category(models.Model):
-    clean_method_is_called = False
+    # This Custom Model manager ensures case insenstive unique fields
+    objects = MyModelManager('title')
 
     uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
     title = models.CharField(max_length=50, unique=True)
@@ -62,22 +55,10 @@ class Category(models.Model):
 
     class Meta:
         verbose_name_plural = 'Categories'
-
-    def clean(self):
-        self.clean_method_is_called = True
-
-        id_ = None
-        if self.id:
-            id_ = self.id
-
-        case_insensitive_unique_validator(self, 'title', self.title, id_)
-
-    def save(self, *args, **kwargs):
-        if not self.clean_method_is_called:
-            self.full_clean()
-
+       
+    def save(self, *args, **kwargs):   
         if self.title is not None:
-            self.slug = slugify(clean_slug(self.title.lower()))
+            self.slug = slugify(re.sub(pattern, '', self.title.lower()))
 
         super().save(*args, **kwargs)
 
@@ -86,6 +67,9 @@ class Category(models.Model):
 
 
 class Post(models.Model):
+    #This Custom Model manager ensures case insenstive unique fields
+    objects = MyModelManager('title')
+
     clean_method_is_called = False
 
     uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
@@ -128,18 +112,13 @@ class Post(models.Model):
             raise ValidationError(
                 {'published': "This post is yet to be approved by the boss, so it can't be published"})
 
-        id_ = None
-        if self.id:
-            id_ = self.id
-
-        case_insensitive_unique_validator(self, 'title', self.title, id_)
 
     def save(self, *args, **kwargs):
         if not self.clean_method_is_called:
             self.full_clean()
 
         if self.title is not None:
-            self.slug = slugify(clean_slug(self.title.lower()))
+            self.slug = slugify(re.sub(pattern, '', self.title.lower()))
 
         super().save(*args, **kwargs)
 

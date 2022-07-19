@@ -5,27 +5,40 @@ from django.db import models
 
 from apps.account.validators import username_regex_validator, username_min_length
 from apps.jwt_authentication import tokens
-from my_blog.validators import case_insensitive_unique_validator
+from my_blog.models_manger import MyModelManager
 
 
 # Create your models here.
 
 
 class CustomUser(AbstractUser):
+    objects = MyModelManager('username', 'email')
+
     clean_method_is_called = False
 
+    EMAIL = 'EL'
+    GOOGLE = 'GE'
+
+    AUTH_PROVIDER_CHOICES = [
+        (EMAIL, 'Email'),
+        (GOOGLE, 'Google'),
+    ]
+
     uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    auth_provider = models.CharField(max_length=2, choices=AUTH_PROVIDER_CHOICES, default=EMAIL)
     username = models.CharField(
         'username',
         max_length=30,
         help_text='Letters, digits and underscore only.',
         unique=True,
         validators=[username_regex_validator, username_min_length],
-        error_messages={
-            'unique': "A user with that username already exists.",
-        },
     )
-    email = models.EmailField('email address', unique=True)
+    email = models.EmailField(
+        'email address',
+        unique=True,
+        max_length=100,
+        error_messages={'unique': 'A user with this email already exists'}
+    )
     is_verified = models.BooleanField(default=False)
 
     def generate_tokens(self):
@@ -37,15 +50,12 @@ class CustomUser(AbstractUser):
         if self.email is not None:
             self.email = self.email.lower()
 
-        id_ = None
-        if self.id:
-            id_ = self.id
-
-        case_insensitive_unique_validator(self, "username", self.username, id_)
-
     def save(self, *args, **kwargs):
         if not self.clean_method_is_called:
             self.full_clean()
+
+        if self.password:
+            self.set_password(self.password)
 
         super().save(*args, **kwargs)
 
