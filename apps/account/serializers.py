@@ -5,10 +5,9 @@ from django.core.mail import EmailMessage
 from django.forms import ValidationError
 from django.template.loader import render_to_string
 from django.urls import reverse
+
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework.response import Response
-from rest_framework.validators import UniqueValidator
 from rest_framework import exceptions
 
 from apps.jwt_authentication import tokens
@@ -21,23 +20,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(validators=[validate_password], write_only=True)
     password2 = serializers.CharField(write_only=True)
 
-    class Meta:
-        # validator_queryset = UserModel.objects.all().values_list('username')
-        # username_validator_message = "User with this username already exists"
-
+    class Meta:      
         model = UserModel
         fields = ('username', 'email', 'auth_provider', 'password', 'password2')
 
         extra_kwargs = {
             'uuid': {
                 'read_only': True
-            },
-            # 'username': {
-            #     'validators': [
-            #         UniqueValidator(queryset=validator_queryset,
-            #                         message=username_validator_message, lookup='iexact'),
-            #     ]
-            # },
+            }           
         }
 
     def validate(self, attrs):

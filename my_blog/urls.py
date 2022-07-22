@@ -24,6 +24,8 @@ urlpatterns = [
     path('account/', include('apps.account.urls')),
 
     path('jwt-auth/', include('apps.jwt_authentication.urls')),
+    
+    path('social-auth/', include('apps.social_authentication.urls')),
 
     path('', include('apps.blog.urls')),
 
