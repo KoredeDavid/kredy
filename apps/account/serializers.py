@@ -38,11 +38,13 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def save(self, request, **kwargs):
+    def save(self, request):
         del self.validated_data['password2']
 
         try:
-            user = super().save(**kwargs)
+            user = UserModel(email= self.validated_data['email'], username= self.validated_data['username'])
+            user.set_password(self.validated_data['password'])
+            user.save()
         except ValidationError as error_message:
             raise exceptions.ValidationError(error_message.error_dict)
 

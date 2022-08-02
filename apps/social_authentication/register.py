@@ -5,8 +5,8 @@ from rest_framework.exceptions import AuthenticationFailed
 
 UserModel = get_user_model()
 
-def generate_username(name):
 
+def generate_username(name):
     username = "".join(name.split(' ')).lower()
     if not UserModel.objects.filter(username=username).exists():
         return username
@@ -15,38 +15,47 @@ def generate_username(name):
         return generate_username(random_username)
 
 
-def register_social_user(provider, user_id, email, name):
-    filtered_user_by_email = UserModel.objects.filter(email=email)
+def register_or_login_social_user(provider, user_id, email, name):
+    user = UserModel.objects.filter(email=email)
 
-    if filtered_user_by_email.exists():
+    if user.exists():
+        user = user[0]
 
-        if provider == filtered_user_by_email[0].auth_provider:
-
-            registered_user = authenticate(
-                email=email, password=os.environ.get('SOCIAL_SECRET'))
-
-            return {
-                'username': registered_user.username,
-                'email': registered_user.email,
-                'tokens': registered_user.tokens()}
-
+        if user.auth_provider == provider and user.is_verified:
+            pass
         else:
-            raise AuthenticationFailed(
-                detail='Please continue your login using ' + filtered_user_by_email[0].auth_provider)
+            if user.auth_provider != provider:
+                user.auth_provider = provider
 
+            if not user.is_verified:
+                user.is_verified = True
+
+            user.save()
+
+        return {
+            'uuid': user.uuid,
+            'username': user.username,
+            'email': user.email,
+            'auth_provider': user.auth_provider,
+            'is_verified': user.is_verified,
+            'tokens': user.generate_tokens()
+        }
     else:
         user = {
-            'username': generate_username(name), 'email': email,
-            'password': os.environ.get('SOCIAL_SECRET')}
-        user = UserModel.objects.create_user(**user)
+            'username': generate_username(name),
+            'email': email,
+        }
+        user = UserModel(**user)
+        user.set_password(os.environ.get('SOCIAL_SECRET_PASSWORD'))
         user.is_verified = True
         user.auth_provider = provider
         user.save()
 
-        new_user = authenticate(
-            email=email, password=os.environ.get('SOCIAL_SECRET'))
         return {
-            'email': new_user.email,
-            'username': new_user.username,
-            'tokens': new_user.tokens()
+            'uuid': user.uuid,
+            'username': user.username,
+            'email': user.email,
+            'auth_provider': user.auth_provider,
+            'is_verified': user.is_verified,
+            'tokens': user.generate_tokens()
         }

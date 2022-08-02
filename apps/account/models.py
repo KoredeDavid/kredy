@@ -53,10 +53,7 @@ class CustomUser(AbstractUser):
     def save(self, *args, **kwargs):
         if not self.clean_method_is_called:
             self.full_clean()
-
-        if self.password:
-            self.set_password(self.password)
-
+        
         super().save(*args, **kwargs)
 
     def __str__(self):
