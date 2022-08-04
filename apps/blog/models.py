@@ -9,7 +9,6 @@ from django.utils.text import slugify
 from ckeditor.fields import RichTextField
 from my_blog.models_manger import MyModelManager
 
-
 UserModel = get_user_model()
 
 # Regex pattern for cleaning blog title and category
@@ -37,7 +36,7 @@ class Author(models.Model):
         if not self.clean_method_is_called:
             self.full_clean()
 
-            super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.user.email
@@ -55,8 +54,8 @@ class Category(models.Model):
 
     class Meta:
         verbose_name_plural = 'Categories'
-       
-    def save(self, *args, **kwargs):   
+
+    def save(self, *args, **kwargs):
         if self.title is not None:
             self.slug = slugify(re.sub(pattern, '', self.title.lower()))
 
@@ -67,7 +66,12 @@ class Category(models.Model):
 
 
 class Post(models.Model):
-    #This Custom Model manager ensures case insenstive unique fields
+    """
+    A post has to be approved before published. A post by a pro_author or a boss does not reed approval.
+    Also, a post can only be approved by a boss
+    """
+
+    # This Custom Model manager ensures case insensitive unique fields
     objects = MyModelManager('title')
 
     clean_method_is_called = False
@@ -77,15 +81,19 @@ class Post(models.Model):
     title = models.CharField(unique=True, max_length=100)
     post_author = models.ForeignKey('Author', on_delete=models.SET_NULL, related_name='post_author', null=True)
     body = RichTextField()
+
     approved = models.BooleanField(default=False, )
     approved_by = models.ForeignKey('Author', on_delete=models.CASCADE, related_name='post_approved_by', blank=True,
                                     null=True)
+
     published = models.BooleanField(default=False, )
     draft = models.BooleanField(default=False)
+
+    bookmarks = models.ManyToManyField(UserModel, related_name='bookmarked_by', blank=True)
+
     created_on = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     slug = models.SlugField(blank=True, editable=False)
-    amount_of_times_read = models.PositiveIntegerField(editable=False)
 
     def publish(self):
         self.draft = False
@@ -106,12 +114,12 @@ class Post(models.Model):
 
         if self.approved_by:
             if not self.approved_by.is_boss:
-                raise ValidationError('Posts can only be approved by bosses')
+                raise ValidationError({'approved_by': 'Posts can only be approved by bosses'})
 
-        if (not self.approved or self.approved_by is None) and self.published:
-            raise ValidationError(
-                {'published': "This post is yet to be approved by the boss, so it can't be published"})
-
+        if not self.post_author.is_pro_author:
+            if (not self.approved or self.approved_by is None) and self.published:
+                raise ValidationError(
+                    {'published': "This post is yet to be approved by the boss, so it can't be published"})
 
     def save(self, *args, **kwargs):
         if not self.clean_method_is_called:
@@ -124,6 +132,45 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class PostRead(models.Model):
+    post_read = models.ForeignKey('Post', related_name='post_read', on_delete=models.SET_NULL, null=True)
+    read_by = models.ForeignKey(UserModel, on_delete=models.SET_NULL, related_name='read_by', null=True, blank=True)
+    date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Posts Read'
+
+    def __str__(self):
+        return f'{self.read_by} read {self.post_read.slug}'
+
+
+class PostReaction(models.Model):
+    LIKE = 'LI'
+    LOVE = 'LO'
+    FUNNY = 'FU'
+    SAD = 'SA'
+    ANGRY = 'AN'
+    SPEECHLESS = 'SP'
+
+    REACTION_CHOICES = [
+        (LIKE, 'Like'),
+        (LOVE, 'Love'),
+        (FUNNY, 'Funny'),
+        (SAD, 'Sad'),
+        (ANGRY, 'Angry'),
+        (SPEECHLESS, 'Speechless')
+    ]
+    post = models.ForeignKey('Post', related_name='reacted_post', on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(UserModel, related_name='reacted_by', on_delete=models.SET_NULL, null=True)
+    reaction = models.CharField(max_length=2, choices=REACTION_CHOICES, default=LIKE)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['post', 'user'], name='post_user_unique')]
+
+    def __str__(self):
+        return f'{self.user} reacts to {self.post}, {self.reaction}'
 
 
 class Edit(models.Model):
