@@ -43,7 +43,7 @@ class Author(models.Model):
 
 
 class Category(models.Model):
-    # This Custom Model manager ensures case insenstive unique fields
+    # This Custom Model manager ensures case insensitive unique fields
     objects = MyModelManager('title')
 
     uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
@@ -67,8 +67,8 @@ class Category(models.Model):
 
 class Post(models.Model):
     """
-    A post has to be approved before published. A post by a pro_author or a boss does not reed approval.
-    Also, a post can only be approved by a boss
+    A post has to be approved before published. A post by a pro_author or a boss does not need approval.
+    Also, a post can only be approved by a boss. The clean() method ensures this.
     """
 
     # This Custom Model manager ensures case insensitive unique fields
@@ -188,3 +188,62 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.comment_author
+
+
+
+"""
+# add 'read_count' to attribute
+>>> users = CustomUser.objects.annotate(read_count=Count('read_by'))
+# filter read_count whose attribute is > 0
+>>> user_who_read_post  = users.filter(read_count__gt=0)
+>>> k = user_who_read_post[1]
+>>> k.username
+'KoredeDavid'
+>>> k.email
+'koredeoluwashola@gmail.com'
+>>> k.uuid
+UUID('56eb9e4c-d121-4d1c-99b0-4e2eb544d2c9')
+>>> k.read_count
+3
+
+>>> PostRead.objects.filter(read_by=k).values_list('post_read__post_category__title').annotate(read_count=Count('post_read__post_category__id')).order_by('-read_count')
+<QuerySet [('This Is Me', 3), ('Naira Life', 3), ('Sex Life', 2)]>
+>>> PostRead.objects.filter(read_by=k).values_list('post_read__post_category__id').annotate(read_count=Count('post_read__post_category__title')).order_by('-read_count')
+<QuerySet [(5, 3), (2, 3), (1, 2)]>
+>>> PostRead.objects.filter(read_by=k).values_list('post_read__post_category__title').annotate(read_count=Count('post_read__post_category__title')).order_by('-read_count')
+<QuerySet [('This Is Me', 3), ('Naira Life', 3), ('Sex Life', 2)]>
+>>> Category.objects.all().values_list('id')
+<QuerySet [(1,), (3,), (5,), (2,), (4,)]>
+>>> Category.objects.all().values_list('id', flat=True)
+<QuerySet [1, 3, 5, 2, 4]>
+>>> PostRead.objects.filter(read_by=k).values_list('post_read__post_category__id').annotate(read_count=Count('post_read__post_category__id')).order_by('-read_count')
+<QuerySet [(5, 3), (2, 3), (1, 2)]>
+>>> PostRead.objects.filter(read_by=k).values_list('post_read__post_category__id', flat=True).annotate(read_count=Count('post_read__post_category__id')).order_by('-read_count')
+<QuerySet [5, 2, 1]>
+>>> ex = list(PostRead.objects.filter(read_by=k).values_list('post_read__post_category__id', flat=True).annotate(read_count=Count('post_read__post_category__id')).order_by('-read_count'))
+>>> ex
+[5, 2, 1]
+>>> Category.objects.exclude(id__in=ex)
+<QuerySet [<Category: School Life>, <Category: A week in life>]>
+>>> Category.objects.exclude(id__in=ex).values_list('id', flat=True)
+<QuerySet [3, 4]>
+>>> rem = Category.objects.exclude(id__in=ex)
+>>> rem = list(rem)
+>>> rem
+[<Category: School Life>, <Category: A week in life>]
+>>> rem = list(Category.objects.exclude(id__in=ex).values_list('id', flat=True))
+>>> rem
+[3, 4]
+>>> ex
+[5, 2, 1]
+>>> ex+rem
+[5, 2, 1, 3, 4]
+>>> Category.Objects.all()
+Traceback (most recent call last):
+  File "<console>", line 1, in <module>
+AttributeError: type object 'Category' has no attribute 'Objects'
+>>> Category.objects.all()
+<QuerySet [<Category: Sex Life>, <Category: Naira Life>, <Category: School Life>, <Category: A week in life>, <Category: This Is Me>]>
+>>> all = ex+rem
+
+"""

@@ -15,7 +15,6 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
@@ -40,7 +39,8 @@ INSTALLED_APPS = [
 
     # Third Party Apps
     'ckeditor',
-    'channels'
+    'channels',
+    'multiple_auth'
 ]
 
 MIDDLEWARE = [
@@ -52,7 +52,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
 
 ROOT_URLCONF = 'my_blog.urls'
 
@@ -75,7 +74,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'my_blog.wsgi.application'
 ASGI_APPLICATION = "my_blog.routing.application"
 
-
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
@@ -94,7 +92,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
@@ -107,7 +104,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
@@ -127,15 +123,18 @@ AUTH_USER_MODEL = 'account.CustomUser'
 LOGIN_URL = 'sign_in'
 
 AUTHENTICATION_BACKENDS = (
-    'apps.account.backends.CustomAuthentication',
+    'multiple_auth.backends.MultipleAuthentication',
     'django.contrib.auth.backends.ModelBackend',
 )
+
+MULTIPLE_AUTH = {
+    'auth_fields': ['username', 'email', 'id', ]
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # I have forgotten the reason I use this guy, but I will just leave it here.
 SITE_ID = 1
-
 
 #  Django Rest Framework settings
 REST_FRAMEWORK = {
